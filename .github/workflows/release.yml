@@ -46,3 +46,4 @@ jobs:
           bin: tjcli  # Make sure this matches your Cargo.toml package name
           target: ${{ matrix.target }}
           token: ${{ secrets.GITHUB_TOKEN }}
+          zip: all
