@@ -43,6 +43,6 @@ jobs:
       - name: Build and Upload Binary Assets
         uses: taiki-e/upload-rust-binary-action@v1
         with:
-          bin: spring-tailwind-cli  # Make sure this matches your Cargo.toml package name
+          bin: tjcli  # Make sure this matches your Cargo.toml package name
           target: ${{ matrix.target }}
           token: ${{ secrets.GITHUB_TOKEN }}
