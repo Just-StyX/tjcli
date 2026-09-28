@@ -1,0 +1,12 @@
+[package]
+name = "tjcli"
+version = "0.1.0"
+edition = "2024"
+
+authors = ["Justice Sam <fjaccobian@gmail.com>"]
+description = "Generates customized Spring Boot + Java + Tailwind (v4)"
+repository = "https://github.com"
+license = "MIT"
+
+[dependencies]
+clap = { version = "4.6.7", features = ["derive"] }
