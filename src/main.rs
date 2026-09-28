@@ -5,7 +5,7 @@ use tjcli::{TclConfig, run};
 
 fn main() {
     if let Err(e) = run(TclConfig::parse()) {
-        eprintln!("Fatal Error: {}", e.to_string());
+        eprintln!("Error: {}", e.to_string());
         exit(1);
     }
 }
