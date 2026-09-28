@@ -55,8 +55,9 @@ All options fall back to sensible defaults if omitted:
 | `-a` | `--artifact-id` | `thymeleafDemo` | The name of the project folder & final target `.jar` output |
 | `-g` | `--group-id` | `jsl.group` | Your Java package group architecture structure |
 | `-j` | `--java-version` | `25` | Target Java language SDK toolchain specification version |
-| `-n` | `--node-version` | `20.11.0` | Node runtime version passed to Gradle's Node runner plugin |
-| `-l` | `--app-name` | `thymeleaf-demo-app` | Internal `spring.application.name` property value in `application.yml` |
+| `-o` | `--node-version` | `26.1.0` | Node runtime version passed to Gradle's Node runner plugin |
+| `-n` | `--app-name` | `thymeleaf-demo-app` | Internal `spring.application.name` property value in `application.yml` |
+| `-p` | `--port` | `8080` | Local port binding definition assigned inside your application.yml file |
 
 ---
 
