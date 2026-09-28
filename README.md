@@ -43,7 +43,7 @@ Run the tool and specify your project options via flags:
   --artifact-id "thymeleafDemo" \
   --group-id "jsl.group" \
   --java-version "25" \
-  --node-version "20.11.0" \
+  --node-version "26.1.0" \
   --app-name "thymeleaf-demo-app"
 ```
 
