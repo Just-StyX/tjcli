@@ -340,16 +340,19 @@ fn get_package_json() -> &'static str {
 
 fn get_index_html() -> &'static str {
     r#"<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns="https://www.w3.org/1999/xhtml">
+<html xmlns:th="http://www.thymeleaf.org" xmlns="https://www.w3.org/1999/xhtml" lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Spring Boot + Tailwind v4</title>
     <link rel="stylesheet" href="http://localhost:5173/src/main/resources/static/css/input.css">
-    <link rel="stylesheet" th:href="@{/css/tailwind.css}">
+    <vite:client></vite:client>
+    <vite:vite>
+        <vite:entry value="/css/tailwind.css"></vite:entry>
+    </vite:vite>
 </head>
 <body class="bg-zinc-950 text-zinc-50 flex items-center justify-center min-h-screen">
     <div class="p-8 bg-zinc-900 border border-zinc-800 rounded-3xl text-center shadow-2xl">
-        <h1 class="text-4xl font-extrabold text-emerald-400">Tailwind v4 Is Live!</h1>
+        <h1 class="text-4xl font-extrabold text-emerald-400">Spring Boot + Thymeleaf + Tailwind v4 Is Live!</h1>
         <p class="mt-4 text-zinc-400">Dynamic variables parsed from Rust completed this scaffold setup successfully.</p>
     </div>
 </body>
