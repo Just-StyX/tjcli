@@ -178,17 +178,26 @@ pub fn run(args: TclConfig) -> TclResult<()> {
         args.app_name, args.artifact_id
     );
     
-    // 1. Convert Group ID & Artifact ID package structure to safe path paths
+    // 1. Convert Group ID & Artifact ID package structure to safe paths
     let package_clean = args.group_id.replace('.', "/") + "/" + &args.artifact_id.to_lowercase();
+    
+    // Main Source Directories
     let java_package_path = root.join("src/main/java").join(&package_clean);
     let resources_css_path = root.join("src/main/resources/static/css");
     let resources_templates_path = root.join("src/main/resources/templates");
     let github_workflow_path = root.join(".github/workflows");
 
+    // Test Directories
+    let test_package_path = root.join("src/test/java").join(&package_clean);
+    let test_resources_path = root.join("src/test/resources");
+
+    // Create all directory structures
     create_dir_all(&java_package_path)?;
     create_dir_all(&resources_css_path)?;
     create_dir_all(&resources_templates_path)?;
     create_dir_all(&github_workflow_path)?;
+    create_dir_all(&test_package_path)?;
+    create_dir_all(&test_resources_path)?;
 
     // 2. Build Tools Configuration
     write(
@@ -227,7 +236,16 @@ pub fn run(args: TclConfig) -> TclResult<()> {
         get_home_controller(&args.group_id, &args.artifact_id),
     )?;
 
-    // 4. Stylesheets & UI Entry Point
+    // 4. Spring Test Layer Generation 🧪
+    write(
+        test_package_path.join(format!(
+            "{}ApplicationTests.java",
+            uppercase_first(&args.artifact_id)
+        )),
+        get_application_test_class(&args.group_id, &args.artifact_id),
+    )?;
+
+    // 5. Stylesheets & UI Entry Point
     write(
         resources_css_path.join("input.css"),
         "@import \"tailwindcss\";\n",
@@ -237,13 +255,13 @@ pub fn run(args: TclConfig) -> TclResult<()> {
         get_index_html(),
     )?;
 
-    // 5. Native Github Actions Pipeline Generation
+    // 6. Native Github Actions Pipeline Generation
     write(
         github_workflow_path.join("ci.yml"),
         get_github_workflow(&args.java_version, &args.node_version),
     )?;
 
-    // 6. Automatically trigger internal system dependencies bootstrap pipeline
+    // 7. Automatically trigger internal system dependencies bootstrap pipeline
     println!("📦 Triggering 'npm install' inside project environment...");
     let npm_status = Command::new("npm")
         .arg("install")
@@ -259,11 +277,10 @@ pub fn run(args: TclConfig) -> TclResult<()> {
         ),
     }
 
-    // 7. Conditional Spring Boot OCI Docker Image Generation
+    // 8. Conditional Spring Boot OCI Docker Image Generation
     if args.build_image {
         println!("🐳 Request detected to compile application into an OCI container...");
 
-        // Ensure gradlew wrapper exists by invoking local 'gradle wrapper' fallback first if needed
         if !root.join("gradlew").exists() {
             println!("⚙️ Local Gradle wrapper missing. Attempting to initialize with host 'gradle wrapper' setup...");
             let _ = Command::new("gradle")
@@ -272,7 +289,6 @@ pub fn run(args: TclConfig) -> TclResult<()> {
                 .status();
         }
 
-        // Cross-platform binary invocation setup
         let gradle_executable = if cfg!(target_os = "windows") { "gradlew.bat" } else { "./gradlew" };
 
         println!("🛠️  Executing Spring Boot Buildpack Image construction system (this may take a few minutes)...");
@@ -299,6 +315,7 @@ pub fn run(args: TclConfig) -> TclResult<()> {
 
     Ok(())
 }
+
 
 fn uppercase_first(s: &str) -> String {
     let mut c = s.chars();
@@ -327,56 +344,30 @@ server:
     )
 }
 
-// fn _get_gradle_config2(
-//     group_id: &str,
-//     artifact_id: &str,
-//     java_version: &str,
-//     node_version: &str,
-// ) -> String {
-//     format!(
-//         r#"plugins {{
-//     java
-//     id("org.springframework.boot") version "4.1.1"
-//     id("io.spring.dependency-management") version "1.1.7"
-//     id("com.github.node-gradle.node") version "7.0.2"
-// }}
+fn get_application_test_class(group_id: &str, artifact_id: &str) -> String {
+    let package_name = format!("{}.{}", group_id, artifact_id.to_lowercase());
+    let test_class_name = format!("{}ApplicationTests", uppercase_first(artifact_id));
+    
+    format!(
+        r#"package {};
 
-// group = "{}"
-// version = "0.0.1"
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
 
-// java {{
-//     toolchain {{
-//         languageVersion.set(JavaLanguageVersion.of({}))
-//     }}
-// }}
+@SpringBootTest
+class {} {{
 
-// repositories {{
-//     mavenCentral()
-// }}
+    @Test
+    void contextLoads() {{
+        // Basic sanity check to ensure Spring context loads properly
+    }}
 
-// dependencies {{
-//     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
-//     implementation("org.springframework.boot:spring-boot-starter-web")
-//     developmentOnly("org.springframework.boot:spring-boot-devtools")
-//     testImplementation("org.springframework.boot:spring-boot-starter-test")
-// }}
+}}
+"#,
+        package_name, test_class_name
+    )
+}
 
-// node {{
-//     version.set("{}")
-//     download.set(true)
-// }}
-
-// tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {{
-//     archiveFileName.set("{}.jar")
-// }}
-
-// tasks.named("processResources") {{
-//     dependsOn(tasks.matching {{ it.name == "npm_run_build" }})
-// }}
-// "#,
-//         group_id, java_version, node_version, artifact_id
-//     )
-// }
 
 fn get_gradle_config(
     group_id: &str,
