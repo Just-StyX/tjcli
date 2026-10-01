@@ -34,7 +34,142 @@ pub struct TclConfig {
 
     #[arg(short = 'p', long = "port", default_value_t = 8080)]
     port: u16,
+
+    #[arg(short = 'b', long = "build-image", default_value_t = true)]
+    build_image: bool,
+
+    #[arg(long = "image-name")]
+    image_name: Option<String>,
+
+    /// Specific container registry domain prefix or namespace (e.g. "ghcr.io/my-username" or "docker.io/library")
+    #[arg(long = "registry")]
+    registry: Option<String>,
 }
+
+// pub fn run(args: TclConfig) -> TclResult<()> {
+//     let root = Path::new(&args.artifact_id);
+//     println!(
+//         "🚀 Scaffolding Spring Boot app: '{}' inside folder '{}'...",
+//         args.app_name, args.artifact_id
+//     );
+//     // 1. Convert Group ID & Artifact ID package structure to safe path paths (e.g. jsl/group/thymeleafdemo)
+//     let package_clean = args.group_id.replace('.', "/") + "/" + &args.artifact_id.to_lowercase();
+//     let java_package_path = root.join("src/main/java").join(&package_clean);
+//     let resources_css_path = root.join("src/main/resources/static/css");
+//     let resources_templates_path = root.join("src/main/resources/templates");
+//     let github_workflow_path = root.join(".github/workflows");
+
+//     create_dir_all(&java_package_path)?;
+//     create_dir_all(&resources_css_path)?;
+//     create_dir_all(&resources_templates_path)?;
+//     create_dir_all(&github_workflow_path)?;
+
+//     // 2. Build Tools Configuration
+//     write(
+//         root.join("build.gradle.kts"),
+//         get_gradle_config(
+//             &args.group_id,
+//             &args.artifact_id,
+//             &args.java_version,
+//             &args.node_version,
+//         ),
+//     )?;
+//     write(
+//         root.join("settings.gradle.kts"),
+//         format!("rootProject.name = \"{}\"\n", args.artifact_id),
+//     )?;
+//     write(root.join("package.json"), get_package_json())?;
+//     write(root.join("vite.config.js"), get_vite_config())?;
+//     write(root.join(".gitignore"), get_gitignore())?;
+
+//     // 3. Spring Code Layer Generation
+//     write(
+//         root.join("src/main/resources/application.yml"),
+//         get_application_yml(&args.app_name, args.port),
+//     )?;
+//     write(
+//         java_package_path.join(format!(
+//             "{}Application.java",
+//             uppercase_first(&args.artifact_id)
+//         )),
+//         get_application_class(&args.group_id, &args.artifact_id),
+//     )?;
+//     write(
+//         java_package_path.join("HomeController.java"),
+//         get_home_controller(&args.group_id, &args.artifact_id),
+//     )?;
+
+//     // 4. Stylesheets & UI Entry Point
+//     write(
+//         resources_css_path.join("input.css"),
+//         "@import \"tailwindcss\";\n",
+//     )?;
+//     write(
+//         resources_templates_path.join("index.html"),
+//         get_index_html(),
+//     )?;
+
+//     // 5. Native Github Actions Pipeline Generation
+//     write(
+//         github_workflow_path.join("ci.yml"),
+//         get_github_workflow(&args.java_version, &args.node_version),
+//     )?;
+
+//     // 6. Automatically trigger internal system dependencies bootstrap pipeline via command engine
+//     println!("📦 Triggering 'npm install' inside project environment...");
+//     let npm_status = Command::new("npm")
+//         .arg("install")
+//         .current_dir(root)
+//         .status();
+
+//     match npm_status {
+//         Ok(status) if status.success() => {
+//             println!("✅ Node package architectures built successfully.")
+//         }
+//         _ => println!(
+//             "⚠️ Failed to run 'npm install' automatically. Make sure Node.js is installed locally and run it manually."
+//         ),
+//     }
+
+//     if args.build_image {
+//         println!("🐳 Request detected to compile application into an OCI container...");
+
+//         // Ensure gradlew wrapper exists by invoking local 'gradle wrapper' fallback first if needed
+//         if !root.join("gradlew").exists() {
+//             println!("⚙️ Local Gradle wrapper missing. Attempting to initialize with host 'gradle wrapper' setup...");
+//             let _ = Command::new("gradle")
+//                 .arg("wrapper")
+//                 .current_dir(root)
+//                 .status();
+//         }
+
+//         // Cross-platform binary invocation setup
+//         let gradle_executable = if cfg!(target_os = "windows") { "gradlew.bat" } else { "./gradlew" };
+
+//         println!("🛠️  Executing Spring Boot Buildpack Image construction system (this may take a few minutes)...");
+//         let boot_build_status = Command::new(gradle_executable)
+//             .arg("bootBuildImage")
+//             .current_dir(root)
+//             .status();
+
+//         match boot_build_status {
+//             Ok(status) if status.success() => {
+//                 println!("✅ OCI Container Image successfully provisioned inside Docker engine environment.")
+//             }
+//             _ => println!(
+//                 "❌ Execution failure during 'bootBuildImage'. Verify that Docker daemon engine is actively running."
+//             ),
+//         }
+//     }
+
+//     println!("\n✨ App Generation Process Completed Successfully!");
+//     println!(
+//         "👉 Run: 'cd {}' then initiate hot reloading via 'npm run dev' and './gradlew bootRun'",
+//         args.artifact_id
+//     );
+
+//     Ok(())
+// }
 
 pub fn run(args: TclConfig) -> TclResult<()> {
     let root = Path::new(&args.artifact_id);
@@ -42,7 +177,8 @@ pub fn run(args: TclConfig) -> TclResult<()> {
         "🚀 Scaffolding Spring Boot app: '{}' inside folder '{}'...",
         args.app_name, args.artifact_id
     );
-    // 1. Convert Group ID & Artifact ID package structure to safe path paths (e.g. jsl/group/thymeleafdemo)
+    
+    // 1. Convert Group ID & Artifact ID package structure to safe path paths
     let package_clean = args.group_id.replace('.', "/") + "/" + &args.artifact_id.to_lowercase();
     let java_package_path = root.join("src/main/java").join(&package_clean);
     let resources_css_path = root.join("src/main/resources/static/css");
@@ -62,6 +198,8 @@ pub fn run(args: TclConfig) -> TclResult<()> {
             &args.artifact_id,
             &args.java_version,
             &args.node_version,
+            args.image_name.as_deref(),
+            args.registry.as_deref(),
         ),
     )?;
     write(
@@ -105,7 +243,7 @@ pub fn run(args: TclConfig) -> TclResult<()> {
         get_github_workflow(&args.java_version, &args.node_version),
     )?;
 
-    // 6. Automatically trigger internal system dependencies bootstrap pipeline via command engine
+    // 6. Automatically trigger internal system dependencies bootstrap pipeline
     println!("📦 Triggering 'npm install' inside project environment...");
     let npm_status = Command::new("npm")
         .arg("install")
@@ -119,6 +257,38 @@ pub fn run(args: TclConfig) -> TclResult<()> {
         _ => println!(
             "⚠️ Failed to run 'npm install' automatically. Make sure Node.js is installed locally and run it manually."
         ),
+    }
+
+    // 7. Conditional Spring Boot OCI Docker Image Generation
+    if args.build_image {
+        println!("🐳 Request detected to compile application into an OCI container...");
+
+        // Ensure gradlew wrapper exists by invoking local 'gradle wrapper' fallback first if needed
+        if !root.join("gradlew").exists() {
+            println!("⚙️ Local Gradle wrapper missing. Attempting to initialize with host 'gradle wrapper' setup...");
+            let _ = Command::new("gradle")
+                .arg("wrapper")
+                .current_dir(root)
+                .status();
+        }
+
+        // Cross-platform binary invocation setup
+        let gradle_executable = if cfg!(target_os = "windows") { "gradlew.bat" } else { "./gradlew" };
+
+        println!("🛠️  Executing Spring Boot Buildpack Image construction system (this may take a few minutes)...");
+        let boot_build_status = Command::new(gradle_executable)
+            .arg("bootBuildImage")
+            .current_dir(root)
+            .status();
+
+        match boot_build_status {
+            Ok(status) if status.success() => {
+                println!("✅ OCI Container Image successfully provisioned inside Docker engine environment.")
+            }
+            _ => println!(
+                "❌ Execution failure during 'bootBuildImage'. Verify that Docker daemon engine is actively running."
+            ),
+        }
     }
 
     println!("\n✨ App Generation Process Completed Successfully!");
@@ -157,12 +327,75 @@ server:
     )
 }
 
+// fn _get_gradle_config2(
+//     group_id: &str,
+//     artifact_id: &str,
+//     java_version: &str,
+//     node_version: &str,
+// ) -> String {
+//     format!(
+//         r#"plugins {{
+//     java
+//     id("org.springframework.boot") version "4.1.1"
+//     id("io.spring.dependency-management") version "1.1.7"
+//     id("com.github.node-gradle.node") version "7.0.2"
+// }}
+
+// group = "{}"
+// version = "0.0.1"
+
+// java {{
+//     toolchain {{
+//         languageVersion.set(JavaLanguageVersion.of({}))
+//     }}
+// }}
+
+// repositories {{
+//     mavenCentral()
+// }}
+
+// dependencies {{
+//     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
+//     implementation("org.springframework.boot:spring-boot-starter-web")
+//     developmentOnly("org.springframework.boot:spring-boot-devtools")
+//     testImplementation("org.springframework.boot:spring-boot-starter-test")
+// }}
+
+// node {{
+//     version.set("{}")
+//     download.set(true)
+// }}
+
+// tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {{
+//     archiveFileName.set("{}.jar")
+// }}
+
+// tasks.named("processResources") {{
+//     dependsOn(tasks.matching {{ it.name == "npm_run_build" }})
+// }}
+// "#,
+//         group_id, java_version, node_version, artifact_id
+//     )
+// }
+
 fn get_gradle_config(
     group_id: &str,
     artifact_id: &str,
     java_version: &str,
     node_version: &str,
+    custom_image_name: Option<&str>,
+    registry: Option<&str>,
 ) -> String {
+    let computed_image_name = match (registry, custom_image_name) {
+        (Some(reg), Some(name)) => format!("{}/{}", reg.trim_end_matches('/'), name),
+        (Some(reg), None) => format!("{}/{}", reg.trim_end_matches('/'), artifact_id.to_lowercase()),
+        (None, Some(name)) => name.to_string(),
+        (None, None) => format!("docker.io/library/{}:latest", artifact_id.to_lowercase()),
+    };
+
+    // If a registry flag is present, default 'publish' to true for the buildpack engine
+    let should_publish = registry.is_some();
+
     format!(
         r#"plugins {{
     java
@@ -171,12 +404,12 @@ fn get_gradle_config(
     id("com.github.node-gradle.node") version "7.0.2"
 }}
 
-group = "{}"
+group = "{group_id}"
 version = "0.0.1-SNAPSHOT"
 
 java {{
     toolchain {{
-        languageVersion.set(JavaLanguageVersion.of({}))
+        languageVersion.set(JavaLanguageVersion.of({java_version}))
     }}
 }}
 
@@ -192,19 +425,35 @@ dependencies {{
 }}
 
 node {{
-    version.set("{}")
+    version.set("{node_version}")
     download.set(true)
 }}
 
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {{
-    archiveFileName.set("{}.jar")
+    archiveFileName.set("{artifact_id}.jar")
+}}
+
+tasks.named<org.springframework.boot.gradle.tasks.bundling.BootBuildImage>("bootBuildImage") {{
+    imageName.set("{computed_image_name}")
+    publish.set({should_publish})
+    docker {{
+        publishRegistry {{
+            username.set(System.getenv("REGISTRY_USERNAME") ?: "")
+            password.set(System.getenv("REGISTRY_PASSWORD") ?: "")
+        }}
+    }}
 }}
 
 tasks.named("processResources") {{
     dependsOn(tasks.matching {{ it.name == "npm_run_build" }})
 }}
 "#,
-        group_id, java_version, node_version, artifact_id
+        group_id = group_id,
+        java_version = java_version,
+        node_version = node_version,
+        artifact_id = artifact_id,
+        computed_image_name = computed_image_name,
+        should_publish = should_publish
     )
 }
 
@@ -249,10 +498,9 @@ public class HomeController {{
 }
 
 fn get_github_workflow(java_version: &str, node_version: &str) -> String {
-    // Extracts major node version from string payload (e.g. 20.11.0 -> 20)
     let major_node = node_version.split('.').next().unwrap_or("26");
     format!(
-        r#"name: Java CI with Gradle and Vite
+        r#"name: Java CI/CD DevOps Pipeline
 
 on:
   push:
@@ -261,37 +509,51 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up JDK {}
+    - name: Set up JDK {java_version}
       uses: actions/setup-java@v4
       with:
-        java-version: '{}'
+        java-version: '{java_version}'
         distribution: 'temurin'
         cache: 'gradle'
 
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '{}'
+        node-version: '{major_node}'
         cache: 'npm'
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Execute Full Production Bundle (Build Frontend & Compiles Jar)
-      run: ./gradlew build
+    - name: Verify Application Core Compiles
+      run: ./gradlew test
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
+    - name: Set up Docker Buildx
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      uses: docker/setup-buildx-action@v3
+
+    - name: Authenticate Container Registry
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      uses: docker/login-action@v3
       with:
-        name: spring-boot-jar
-        path: build/libs/*.jar
+        registry: ${{{{ secrets.REGISTRY_URL }}}}
+        username: ${{{{ secrets.REGISTRY_USERNAME }}}}
+        password: ${{{{ secrets.REGISTRY_PASSWORD }}}}
+
+    - name: Publish Production OCI Buildpack Image
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      env:
+        REGISTRY_USERNAME: ${{{{ secrets.REGISTRY_USERNAME }}}}
+        REGISTRY_PASSWORD: ${{{{ secrets.REGISTRY_PASSWORD }}}}
+      run: ./gradlew bootBuildImage
 "#,
-        java_version, java_version, major_node
+        java_version = java_version,
+        major_node = major_node
     )
 }
 
