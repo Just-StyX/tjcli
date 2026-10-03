@@ -1,8 +1,8 @@
 # tjcli 🚀
 
-A lightning-fast command-line interface tool written in Rust to instantly scaffold a modern, fully configured **Spring Boot 4.1.1 + Thymeleaf + Tailwind CSS v4 + Vite** application. 
+A lightning-fast command-line interface tool written in Rust to instantly scaffold a modern, fully configured **Spring Boot 4.1.1 + Thymeleaf + Tailwind CSS v4 + Vite + TypeScript** application. 
 
-It handles all the configuration boilerplate—including setting up Java 25 properties, linking Vite's hot-reload server directly to your Thymeleaf templates, integrating Tailwind v4 dynamically, setting up a standard `.gitignore`, creating a production-ready GitHub Actions CI/CD workflow, and configuring Cloud Native Buildpacks for containerization.
+It handles all the configuration boilerplate—including setting up Java 25 properties, linking Vite's hot-reload server directly to your Thymeleaf templates, integrating Tailwind v4 dynamically, setting up a standard `.gitignore`, creating a production-ready GitHub Actions CI/CD workflow, configuring Cloud Native Buildpacks for containerization, whitelisting asset delivery paths via a built-in Spring Security layout, and mapping multi-container production topologies using Docker Compose with an integrated PostgreSQL backend database.
 
 ---
 
@@ -10,10 +10,14 @@ It handles all the configuration boilerplate—including setting up Java 25 prop
 
 - **Java 25 Ready:** Configures your `build.gradle.kts` toolchain properties out of the box.
 - **Tailwind CSS v4 & Vite:** Completely skips legacy `tailwind.config.js` setups, opting for Tailwind v4's high-performance native Vite bundling (`@tailwindcss/vite`).
+- **TypeScript First Asset Delivery:** Configures your client-side compilation layers with a native `tsconfig.json` template setup right from the directory root folder.
 - **Instant Browser Live-Reload:** Bundles `vite-plugin-live-reload` so edits to your Thymeleaf `.html` pages dynamically refresh your browser window instantly.
-- **Unified Build Pipeline:** Automatically links your Gradle resource building phases to execution tasks to run production frontend minification scripts gracefully.
-- **Automated Bootstrapping:** Runs `npm install` automatically right after file generation.
-- **Automated CI/CD:** Generates a pre-configured GitHub Actions workflow file (`ci.yml`) to compile your application into a deployable `.jar` package automatically.
+- **Unified Build Pipeline:** Automatically links your Gradle resource building phases to explicit Node tasks using strict casting configurations, running production frontend minification scripts gracefully.
+- **Automated Bootstrapping:** Runs `npm install` automatically right after file generation using an optimized `--no-audit` pipeline cache to bypass dev-dependency false-positives instantly.
+- **🔐 Built-in Security Architecture:** Provisions an out-of-the-box Spring Security filtering web-configuration layer. It locks down sensitive domain paths while ensuring public static delivery routes (`/dist/**`, `/css/**`) remain completely readable by your template loaders.
+- **🛡️ Unattended Code Quality Guards:** Instruments a JavaScript-driven modern flat ESLint module configuration (`eslint.config.js`) explicitly wired to track and audit TypeScript syntax before software compilation cycles execute.
+- **🐘 Automated Multi-Container Topologies:** Generates a production-ready `compose.yaml` file mapping out an isolated backend PostgreSQL database instance bound alongside your Spring service with automated container healthcheck loops.
+- **Automated CI/CD:** Generates a pre-configured GitHub Actions workflow file (`ci.yml`) that triggers strict linting validation checks, executes unit test scopes, and compiles your application automatically.
 - **🐳 Built-in OCI Image Support:** Native hooks into Spring Boot's Cloud Native Buildpack system (`./gradlew bootBuildImage`) with customizable names and image registries via CLI flags.
 
 ---
@@ -25,16 +29,22 @@ The generated application balances a dual-engine architecture designed for insta
 ```text
   [ Local Coding Mode ]
   ┌──────────────────┐
-  │  Vite Dev Server │ ───( Serves Live CSS Modules )───┐
-  │  (Port 5173 HMR) │                                  │
-  └──────────────────┘                                  ▼
-  ┌──────────────────┐                        ┌──────────────────┐
-  │   Thymeleaf HTML │ ◄──( Live Reload Trigger )─── │  Web Browser     │
-  │   Layout Template│                        │  http://localhost│
-  └──────────────────┘                        └──────────────────┘
-  ┌──────────────────┐                                  ▲
-  │ Spring Boot Dev  │ ───( Emits HTML Content )────────┘
-  │ (Port 8080 Engine│
+  │  Vite Dev Server │ ───( Serves Live CSS/TS Modules )───┐
+  │  (Port 5173 HMR) │                                     │
+  └──────────────────┘                                     ▼
+  ┌──────────────────┐                           ┌──────────────────┐
+  │   Thymeleaf HTML │ ◄──( Live Reload Trigger )───── │  Web Browser     │
+  │   Layout Template│                           │  http://localhost│
+  └──────────────────┘                           └──────────────────┘
+  ┌──────────────────┐                                     ▲
+  │ Spring Boot Dev  │ ───( Emits Securely Parsed HTML )───┘
+  │ (Port 8080 Engine│     [Intercepts Custom <vite:vite> tags via ViteDialect]
+  └──────────────────┘
+           │
+           ▼ (Auto-connects via Localhost Overrides)
+  ┌──────────────────┐
+  │ PostgreSQL DB Container
+  │ (Port 5432 Data) │
   └──────────────────┘
 
   [ Production Compilation Pipeline ]
@@ -47,7 +57,7 @@ The generated application balances a dual-engine architecture designed for insta
    ▼
   ┌──────────────────────┐     ┌──────────────────────┐
   │ Injects Compiled     │ ──► │ Spring Boot OCI      │
-  │ Asset to /static/css │     │ Container / App .jar │
+  │ Asset to /static/dist│     │ Container / App .jar │
   └──────────────────────┘     └──────────────────────┘
 ```
 
@@ -57,7 +67,7 @@ Before running the generated project, ensure you have the following installed on
 - [Rust](https://rust-lang.org) (to compile/run `tjcli`)
 - [Java 25](https://adoptium.net)
 - [Node.js (v20 or higher)](https://nodejs.org)
-- [Docker Engine](https://docker.com) (only required if building OCI container images)
+- [Docker Engine / Docker Desktop](https://docker.com) (required for database container management and OCI container image creation)
 
 ---
 
@@ -80,9 +90,9 @@ Run the tool and specify your project options via flags:
   --java-version "25" \
   --node-version "26.1.0" \
   --app-name "thymeleaf-demo-app" \
-  --build-image \
-  --registry "ghcr.io/my-username" \
-  --image-name "custom-app"
+  --with-security true \
+  --port 8080 \
+  --build-image false
 ```
 
 ### Available Configuration Flags
@@ -96,30 +106,36 @@ All options fall back to sensible defaults if omitted:
 | `-o` | `--node-version` | `26.1.0` | Node runtime version passed to Gradle's Node runner plugin |
 | `-n` | `--app-name` | `thymeleaf-demo-app` | Internal `spring.application.name` property value in `application.yml` |
 | `-p` | `--port` | `8080` | Local port binding definition assigned inside your application.yml file |
-| `-b` | `--build-image` | `false` | Automatically invoke `./gradlew bootBuildImage` right after scaffolding |
+| `-s` | `--with-security` | `true` | Injects a preconfigured, whitelist-optimized Spring Security filtering layer |
+| `-b` | `--build-image` | `true` | Automatically invoke `./gradlew bootBuildImage` right after scaffolding |
 | | `--image-name` | *None* | Overrides the default image name (falls back to lowercased `artifact-id`) |
 | | `--registry` | *None* | Target container registry namespace (e.g. `ghcr.io/username` or `docker.io/library`) |
-
 ## 💻 Local Development Workflow
 
-Once your project is scaffolded, navigate into the directory and launch the split-terminal local stack:
+Once your project is scaffolded, navigate into the directory and spin up your stack components.
 
+### Step 1: Initialize Supporting Infrastructure (Terminal 1)
+Boot up your decoupled PostgreSQL storage volume stack container in detached background execution mode:
 ```bash
-cd thymeleafDemo
+docker compose up postgres-db -d
 ```
 
-### Step 1: Start the Frontend Watcher (Terminal 1)
-This boots up the Vite HMR asset compiler at `http://localhost:5173` and tracks live saves inside your layout documents:
+### Step 2: Start the Frontend Watcher (Terminal 2)
+This boots up the Vite HMR asset compiler at `http://localhost:5173` and tracks live saves inside your client-side assets:
 ```bash
 npm run dev
 ```
 
-### Step 2: Boot Up the Spring Application (Terminal 2)
-Run the backend web container. Because `spring.thymeleaf.cache` is disabled during development mode, it will seamlessly reference the live CSS modules served from Vite:
+### Step 3: Boot Up the Spring Application (Terminal 3)
+Run the backend web container. To map into development mode asset endpoints and activate template live-reloading, explicitly pass the matching runtime profile argument flag:
 ```bash
-./gradlew bootRun
+./gradlew bootRun --args='--spring.profiles.active=dev'
 ```
-Open your browser to **`http://localhost:8080`** and start modifying files inside `src/main/resources/templates/index.html`!
+Open your browser to **`http://localhost:8080`**. You will be greeted by the secure Spring Login layout screen. Enter the default scaffolding credentials:
+- **Username:** `admin`
+- **Password:** `password`
+
+Once logged in, the custom Java `ViteDialect` engine will intercept the custom `<vite:client>` and `<vite:vite>` layout blocks to bridge your live TypeScript compilation modules cleanly. Your session identity tokens are passed down securely from the controller directly into your Thymeleaf view templates.
 
 ---
 
@@ -130,18 +146,25 @@ When you are ready to package your application for production deployment, run st
 ```bash
 ./gradlew build
 ```
-**What happens behind the scenes:** Gradle triggers the node plugin execution cycle, builds the compiled frontend distribution styles, injects minified static assets directly into Spring's `/static/css/tailwind.css` structure, and outputs an executable self-contained package file to `build/libs/thymeleafDemo.jar`.
+**What happens behind the scenes:** Gradle casts tasks into the explicit `com.github.node-gradle.node` runtime graph. This invokes `npmInstall` safely, triggers your ESLint verification checks, processes the minified Vite compilation, bundles output styles to `src/main/resources/static/dist`, and outputs a self-contained package archive file to `build/libs/thymeleafDemo.jar`.
 
-### OCI Docker Container Compilation
-If you didn't pass the `-b` flag during the scaffolding step, you can build a light, secure production Docker image at any time by executing:
+### Full Ecosystem Containerization Orchestration
+To simulate your full cloud architecture locally, compile your application container via Cloud Native Buildpacks first:
 ```bash
 ./gradlew bootBuildImage
 ```
-This requires a running local Docker daemon. The image will be compiled via **Cloud Native Buildpacks**, incorporating your custom image name and registry properties baked directly into your generated `build.gradle.kts`.
+Once completed, launch your full production layout topology. Your application container will automatically wait for the PostgreSQL container to complete its health check loop before launching, overriding the internal `application.yml` profile database configurations cleanly via runtime docker variables:
+```bash
+docker compose up
+```
 
 ### 🚀 Automated GitHub Actions CI/CD Containerization Pipeline
 
-The generated workflow (`.github/workflows/ci.yml`) is completely automated. On `pull_request` interactions, it verifies code compiling sanity. When code merges securely into your `main` branch, it automatically initializes build environments, hooks into Docker engines, and invokes Spring Boot's Buildpack compiler to publish directly to your cloud registry.
+The generated workflow (`.github/workflows/ci.yml`) is completely automated. 
+
+On `pull_request` interactions, it initializes a clean runner environment, boots up Node and Java toolchains, installs packages, runs an **unattended ESLint code linting structural validation check** against your code assets, and completes a full backend compilation sanity run via `./gradlew test`.
+
+When code merges securely into your `main` branch, it executes your validation checks, flags down the container registry credentials, bypasses duplicate compilation tasks using the optimized `-x test` execution flag, and builds and publishes your image onto your remote environment registry infrastructure instantly.
 
 #### Required Repository Secrets Setup
 To let the pipeline authenticate with your registry successfully, navigate to **Settings > Secrets and variables > Actions** in your GitHub repository interface and create the following repository secrets:
@@ -154,7 +177,7 @@ To let the pipeline authenticate with your registry successfully, navigate to **
 
 ## 🔐 Advanced: Private Registry Authentication
 
-If you configure your application to automatically publish your container image onto private networks or providers (such as GitHub Packages Container Registry `ghcr.io` or Amazon ECR), update your generated `build.gradle.kts` task configuration block to dynamically map authentication tokens from your environment:
+If you configure your application to automatically publish your container image onto private networks or providers (such as GitHub Packages Container Registry `ghcr.io` or Amazon ECR), your generated `build.gradle.kts` task configuration block is already pre-configured to dynamically map authentication tokens from your environment:
 
 ```kotlin
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootBuildImage>("bootBuildImage") {
@@ -162,8 +185,8 @@ tasks.named<org.springframework.boot.gradle.tasks.bundling.BootBuildImage>("boot
     publish.set(true) // Auto-push to target repository after compilation finishes
     docker {
         publishRegistry {
-            username.set(System.getenv("REGISTRY_USERNAME"))
-            password.set(System.getenv("REGISTRY_PASSWORD"))
+            username.set(System.getenv("REGISTRY_USERNAME") ?: "")
+            password.set(System.getenv("REGISTRY_PASSWORD") ?: "")
         }
     }
 }
@@ -178,47 +201,66 @@ export REGISTRY_PASSWORD="your-secret-access-token"
 
 ---
 
-## 🏃 Running the Compiled OCI Container Locally
+## 🏃 Running the Full Multi-Container Stack Locally
 
-Once Cloud Native Buildpacks finishes compilation, verification of your fully containerized production bundle can be initiated instantly inside your local Docker runtime environment.
-
-Expose the target port (mapping host machine port `8080` straight to internal container server specifications) and run your image:
+Because your scaffolding engine packages a full application topology alongside an isolated database, you do not need to run manual `docker run` loops. You can spin up the entire production-ready environment—with your Spring Boot app server safely waiting for your PostgreSQL storage layers to complete health checks—using a single command:
 
 ```bash
-# General Syntax: docker run -p <HostPort>:<ContainerPort> <RegistryPath>/<ImageName>
-docker run -p 8080:8080 ghcr.io/my-username/custom-app:latest
+docker compose up --build
 ```
 
-If you launched container setup without modifying the defaults (`--registry` or `--image-name`), run:
+### Manual Individual Container Verification (Fallback)
+If you want to spin up your compiled Spring application independently inside your local Docker engine and bypass the Compose routing layout, map your configured application port and supply your database credentials as inline runtime overrides:
+
 ```bash
-docker run -p 8080:8080 docker.io/library/thymeleafdemo:latest
+# General Syntax: docker run -p <HostPort>:<ContainerPort> -e <EnvOverrides> <ImageName>
+docker run -p 8080:8080 \
+  -e SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/appdb \
+  -e SPRING_DATASOURCE_USERNAME=devuser \
+  -e SPRING_DATASOURCE_PASSWORD=devpassword \
+  docker.io/library/thymeleafdemo:latest
 ```
 
 ---
 
 ## 📄 Generated Project Structure
 
+Your CLI tool creates a beautifully clean, unified workspace structure that groups your Java backend package layers and modern TypeScript frontend compilers into a single, cohesive repository footprint:
+
 ```text
 my-app/
-├── .github/workflows/ci.yml <-- Automated multi-step Java 25 & Node pipeline
-├── build.gradle.kts         <-- Handles plugin tasks and bootBuildImage customization
+├── .github/workflows/ci.yml   <-- Automated Linting, Java 25 & Node pipeline
+├── build.gradle.kts           <-- Chained Node-Gradle task graph configuration
 ├── settings.gradle.kts
-├── package.json             <-- Vite + Tailwind CSS v4 compiler configurations
-├── vite.config.js           <-- Handles HTML live-reloads and CSS asset targeting
-├── .gitignore               <-- Clears build/, node_modules/, and IDE caches
+├── compose.yaml               <-- Production multi-container PostgreSQL architecture
+├── package.json               <-- Vite + Tailwind CSS v4 + Overrides security maps
+├── vite.config.js             <-- Handles HTML live-reloads and CORS port origins
+├── eslint.config.js           <-- Modern Flat JS config auditing TypeScript rules
+├── tsconfig.json              <-- TypeScript target compilation options file
+├── .gitignore                 <-- Clears target/, dist/, .vite/, and node_modules/
 └── src/
-    └── main/
-        ├── java/jsl/group/thymeleafdemo/
-        │   ├── ThymeleafDemoApplication.java  <-- Main entry class
-        │   └── HomeController.java            <-- Simple root route web controller
-        └── resources/
-            ├── application.yml                <-- App metadata & disabled hot caches
-            ├── static/css/input.css           <-- Tailwind v4 standard entrypoint
-            └── templates/index.html           <-- Dual dev-to-prod layout file
+    ├── main/
+    │   ├── java/jsl/group/thymeleafdemo/
+    │   │   ├── ThymeleafDemoApplication.java <-- Spring standard bootstrapper
+    │   │   ├── HomeController.java           <-- Injects Auth profile context tokens
+    │   │   ├── ViteWebConfig.java            <-- Context profile interceptor beans
+    │   │   ├── ViteDialect.java              <-- Custom Thymeleaf tag namespace definition
+    │   │   ├── ViteClientTagProcessor.java   <-- Processes development <vite:client> loops
+    │   │   ├── ViteTagProcessor.java         <-- Processes production <vite:vite> links
+    │   │   └── SecurityConfig.java           <-- Whitelists static asset delivery paths
+    │   └── resources/
+    │       ├── application.yml               <-- Database parameters & profile fallbacks
+    │       ├── static/
+    │       │   ├── css/input.css             <-- Tailwind v4 standard entrypoint
+    │       │   └── js/main.ts                <-- TypeScript core client entry file
+    │       └── templates/index.html          <-- Secured template dashboard layout
+    └── test/
+        └── java/jsl/group/thymeleafdemo/
+            └── ThymeleafDemoApplicationTests.java <-- Automated application health checker
 ```
 
 ---
 
-## 🛡️ License
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
