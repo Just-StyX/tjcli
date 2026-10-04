@@ -1,6 +1,6 @@
 [package]
 name = "tjcli"
-version = "1.0.0"
+version = "0.1.2"
 edition = "2024"
 
 authors = ["Justice Sam <fjaccobian@gmail.com>"]
