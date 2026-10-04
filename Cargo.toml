@@ -9,7 +9,7 @@ repository = "https://github.com"
 license = "MIT"
 readme = "README.md"
 keywords = ["spring-boot", "thymeleaf", "tailwind", "vite", "scaffold"]
-categories = ["development-tools::scaffolding", "command-line-utilities"]
+categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
 clap = { version = "4.6.7", features = ["derive", "env"] }
